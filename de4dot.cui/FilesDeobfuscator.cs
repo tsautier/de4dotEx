@@ -75,6 +75,7 @@ namespace de4dot.cui {
 			public string InputDirectory { get; set; }
 			public string OutputDirectory { get; set; }
 			public bool SkipUnknownObfuscators { get; set; }
+			public bool AllowFileLoadError { get; set; }
 		}
 
 		public FilesDeobfuscator(Options options) => this.options = options;
@@ -262,7 +263,15 @@ namespace de4dot.cui {
 				}
 				if (ok) {
 					foreach (var filename in DoDirectoryInfo(searchDir, di)) {
-						var obfuscatedFile = CreateObfuscatedFile(searchDir, filename);
+						IObfuscatedFile obfuscatedFile = null;
+						try {
+							obfuscatedFile =  CreateObfuscatedFile(searchDir, filename);
+						}catch (Exception ex){
+							if (!searchDir.AllowFileLoadError)
+								throw;
+							Logger.Instance.Log(false, null, LoggerEvent.Warning, "Could not load file {0} Use -v to see stack trace", filename);
+							Program.PrintStackTrace(ex, LoggerEvent.Verbose);
+						}
 						if (obfuscatedFile != null)
 							yield return obfuscatedFile;
 					}					

@@ -107,6 +107,12 @@ namespace de4dot.cui {
 					ExitError("Missing -r option");
 				searchDir.SkipUnknownObfuscators = true;
 			}));
+			miscOptions.Add(new NoArgOption("re", null, "Skip recursively found files that throw an exception on load", () => {
+				if (searchDir == null)
+					ExitError("Missing -r option");
+				searchDir.AllowFileLoadError = true;
+			}));
+			
 			miscOptions.Add(new NoArgOption("d", null, "Detect obfuscators and exit", () => {
 				filesOptions.DetectObfuscators = true;
 			}));
