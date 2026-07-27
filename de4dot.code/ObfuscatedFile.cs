@@ -309,7 +309,8 @@ namespace de4dot.code {
 		public void Save() {
 			Logger.n("Saving {0}", options.NewFilename);
 			var mdFlags = GetMetadataFlags();
-			mdFlags |= MetadataFlags.KeepOldMaxStack;
+			if (!options.ControlFlowDeobfuscation)
+				mdFlags |= MetadataFlags.KeepOldMaxStack;
 			assemblyModule.Save(options.NewFilename, mdFlags, new PrintNewTokens(module, deob as IModuleWriterListener));
 		}
 
