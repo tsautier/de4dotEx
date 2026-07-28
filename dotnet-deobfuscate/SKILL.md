@@ -15,12 +15,12 @@ When triaging files using static analysis tools like **Detect It Easy (DiE)**, m
 
 | Detect It Easy (DiE) Detection | Obfuscator / Protector | de4dotEx Command / Options |
 | :--- | :--- | :--- |
-| **Protector: Confuser (1.X)** | ConfuserEx (1.X) | `de4dot <file>` (Auto-detect) or force: `-d un_confuser` |
-| **Protector: Babel.NET** | Babel.NET | `de4dot <file>` or force: `-d un_babel` |
-| **Protector: SmartAssembly** | SmartAssembly | `de4dot <file>` or force: `-d un_sa` |
-| **Protector: dotNET Reactor** | .NET Reactor | `de4dot <file>` or force: `-d un_reactor` |
-| **Protector: ILProtector** | ILProtector | `de4dot <file>` *(Requires Strategy B Wine Container)* |
-| **Protector: Agile.NET** | Agile.NET | `de4dot <file>` *(Requires Strategy B Wine Container)* |
+| **Protector: Confuser (1.X)** | ConfuserEx (1.X) | `de4dot <file>` (Auto-detect) or force: `-p crx` |
+| **Protector: Babel.NET** | Babel.NET | `de4dot <file>` or force: `-p bl` |
+| **Protector: SmartAssembly** | SmartAssembly | `de4dot <file>` or force: `-p sa` |
+| **Protector: dotNET Reactor** | .NET Reactor | `de4dot <file>` or force: `-p dr4` |
+| **Protector: ILProtector** | ILProtector | `de4dot <file>` or force: `-p il` *(Requires Strategy B Wine Container)* |
+| **Protector: Agile.NET** | Agile.NET | `de4dot <file>` or force: `-p an` *(Requires Strategy B Wine Container)* |
 
 ---
 
@@ -33,12 +33,12 @@ Always try **Auto-detection** first, as de4dotEx parses assembly metadata and `C
 de4dot MyAssembly.dll -o CleanAssembly.dll
 ```
 
-### 2. Forcing a Specific Deobfuscator (`-d` flag)
+### 2. Forcing a Specific Deobfuscator (`-p` flag)
 If auto-detection fails or you want to override:
-* **ConfuserEx:** `de4dot -d un_confuser MyAssembly.dll`
-* **.NET Reactor:** `de4dot -d un_reactor MyAssembly.dll`
-* **Babel.NET:** `de4dot -d un_babel MyAssembly.dll`
-* **SmartAssembly:** `de4dot -d un_sa MyAssembly.dll`
+* **ConfuserEx:** `de4dot -p crx MyAssembly.dll`
+* **.NET Reactor:** `de4dot -p dr4 MyAssembly.dll`
+* **Babel.NET:** `de4dot -p bl MyAssembly.dll`
+* **SmartAssembly:** `de4dot -p sa MyAssembly.dll`
 
 ### 3. Decrypting Strings (`-str` option)
 If the obfuscator uses dynamic delegates or emulation for string decryption:
