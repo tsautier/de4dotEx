@@ -13,6 +13,7 @@ namespace de4dot.code.deobfuscators.DoubleZero {
 			// Turning the int [] array into an integer
 			return DecryptInt(integers, 0, 0);
 		}
+#pragma warning disable CA2200
 		private static int DecryptInt(int[] a1, int a2, int a3) {
 			// This function was copied and pasted from dnSpy
 			int num = -1;
@@ -515,5 +516,6 @@ IL_8D2:
 			}
 			return array2[num];
 		}
+#pragma warning restore CA2200
 	}
 }

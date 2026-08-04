@@ -228,7 +228,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 
 		void FixInvalidMvid() {
 			if (module.Mvid == Guid.Empty) {
-				var hash = new SHA1Managed().ComputeHash(Encoding.UTF8.GetBytes(module.ToString()));
+				var hash = SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(module.ToString()));
 				var guid = new Guid(BitConverter.ToInt32(hash, 0),
 									BitConverter.ToInt16(hash, 4),
 									BitConverter.ToInt16(hash, 6),

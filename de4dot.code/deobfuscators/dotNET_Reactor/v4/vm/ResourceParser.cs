@@ -101,7 +101,7 @@ internal class ResourceParser {
             if (opcode >= 176)
                 throw new Exception($"Opcode {opcode} is out of range");
 
-            object? operand = null;
+            object operand = null;
             if (_operands[opcode] != 0)
             {
                 operand = _operands[opcode] switch

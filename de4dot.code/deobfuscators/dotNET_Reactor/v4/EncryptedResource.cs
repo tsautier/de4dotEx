@@ -229,7 +229,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			public byte[] Decrypt(EmbeddedResource resource) => DeobUtils.AesDecrypt(resource.CreateReader().ToArray(), key, iv);
 
 			public byte[] Encrypt(byte[] data) {
-				using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
+				using (var aes = Aes.Create()) {
 					using (var transform = aes.CreateEncryptor(key, iv)) {
 						return transform.TransformFinalBlock(data, 0, data.Length);
 					}

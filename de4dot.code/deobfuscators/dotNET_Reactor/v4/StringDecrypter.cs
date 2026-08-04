@@ -34,7 +34,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		MyPEImage peImage;
 		byte[] fileData;
 		StringDecrypterVersion stringDecrypterVersion;
-		Dictionary<string, int> constantFields;
 
 		enum StringDecrypterVersion {
 			UNKNOWN = 0,

@@ -99,12 +99,11 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			reader.Position = 0;
 			var key = reader.ReadSerializedString();
 			var data = reader.ReadRemainingBytes();
-			var cryptoTransform = new DESCryptoServiceProvider {
-				Key = Encoding.ASCII.GetBytes(key),
-				IV = Encoding.ASCII.GetBytes(key),
-			}.CreateDecryptor();
+			var des = DES.Create();
+			des.Key = Encoding.ASCII.GetBytes(key);
+			des.IV = Encoding.ASCII.GetBytes(key);
 			var memStream = new MemoryStream(data);
-			using (var reader2 = new BinaryReader(new CryptoStream(memStream, cryptoTransform, CryptoStreamMode.Read))) {
+			using (var reader2 = new BinaryReader(new CryptoStream(memStream, des.CreateDecryptor(), CryptoStreamMode.Read))) {
 				return reader2.ReadBytes((int)memStream.Length);
 			}
 		}

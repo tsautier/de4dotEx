@@ -341,13 +341,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			if ((flags & desEncryptedFlag) != 0) {
 				var memStream = new MemoryStream((int)resourceStream.Length);
-				using (var provider = new DESCryptoServiceProvider()) {
+				using (var des = DES.Create()) {
 					var iv = new byte[8];
 					sourceStream.Read(iv, 0, 8);
-					provider.IV = iv;
-					provider.Key = GetKey(sourceStream);
+					des.IV = iv;
+					des.Key = GetKey(sourceStream);
 
-					using (var transform = provider.CreateDecryptor()) {
+					using (var transform = des.CreateDecryptor()) {
 						while (true) {
 							int count = sourceStream.Read(buffer1, 0, buffer1.Length);
 							if (count <= 0)

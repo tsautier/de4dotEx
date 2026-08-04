@@ -73,10 +73,10 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			case 2:
 				if (resourceDecrypterInfo.DES_Key == null || resourceDecrypterInfo.DES_IV == null)
 					throw new ApplicationException("DES key / iv have not been set yet");
-				using (var provider = new DESCryptoServiceProvider()) {
-					provider.Key = resourceDecrypterInfo.DES_Key;
-					provider.IV  = resourceDecrypterInfo.DES_IV;
-					using (var transform = provider.CreateDecryptor()) {
+				using (var des = DES.Create()) {
+					des.Key = resourceDecrypterInfo.DES_Key;
+					des.IV  = resourceDecrypterInfo.DES_IV;
+					using (var transform = des.CreateDecryptor()) {
 						return Decrypt(transform.TransformFinalBlock(encryptedData, 4, encryptedData.Length - 4));
 					}
 				}
@@ -84,10 +84,10 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			case 3:
 				if (resourceDecrypterInfo.AES_Key == null || resourceDecrypterInfo.AES_IV == null)
 					throw new ApplicationException("AES key / iv have not been set yet");
-				using (var provider = new RijndaelManaged()) {
-					provider.Key = resourceDecrypterInfo.AES_Key;
-					provider.IV  = resourceDecrypterInfo.AES_IV;
-					using (var transform = provider.CreateDecryptor()) {
+				using (var aes = Aes.Create()) {
+					aes.Key = resourceDecrypterInfo.AES_Key;
+					aes.IV  = resourceDecrypterInfo.AES_IV;
+					using (var transform = aes.CreateDecryptor()) {
 						return Decrypt(transform.TransformFinalBlock(encryptedData, 4, encryptedData.Length - 4));
 					}
 				}

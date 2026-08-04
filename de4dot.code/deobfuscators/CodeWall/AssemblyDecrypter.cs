@@ -121,7 +121,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				string keyInfo = GetMainResourceKeyInfo(calledMethod, out decryptAssemblyMethod);
 				if (keyInfo == null)
 					continue;
-				return BitConverter.ToString(new MD5CryptoServiceProvider().ComputeHash(new ASCIIEncoding().GetBytes(keyInfo))).Replace("-", "");
+				return BitConverter.ToString(MD5.Create().ComputeHash(new ASCIIEncoding().GetBytes(keyInfo))).Replace("-", "");
 			}
 
 			decryptAssemblyMethod = null;

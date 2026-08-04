@@ -185,7 +185,9 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		static byte[] Decrypt(PasswordInfo password, byte[] data) {
 			const int iterations = 2;
 			const int numBits = 0x100;
+#pragma warning disable SYSLIB0041
 			var key = new Rfc2898DeriveBytes(password.passphrase, Encoding.UTF8.GetBytes(password.salt), iterations).GetBytes(numBits / 8);
+#pragma warning restore SYSLIB0041
 			return DeobUtils.AesDecrypt(data, key, Encoding.UTF8.GetBytes(password.iv));
 		}
 
