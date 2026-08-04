@@ -20,7 +20,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Build
         shell: pwsh
@@ -101,12 +101,12 @@ jobs:
           Copy-Item beaengine/src/COPYING.txt publish-$env:DOTNET_RUNTIME/LICENSES/LICENSE.BeaEngine.GPL.txt
           Copy-Item beaengine/src/COPYING.LESSER.txt publish-$env:DOTNET_RUNTIME/LICENSES/LICENSE.BeaEngine.LGPL.txt
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: de4dotEx-net48
           path: Release/net48
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: de4dotEx-${{ env.DOTNET_RUNTIME }}-win-x64
           path: publish-${{ env.DOTNET_RUNTIME }}
@@ -116,10 +116,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.SETUP_DOTNET_VERSION }}
 
@@ -149,7 +149,7 @@ jobs:
           cp beaengine/src/COPYING.LESSER.txt publish-${DOTNET_RUNTIME}/LICENSES/LICENSE.BeaEngine.LGPL.txt
 
       - name: Upload publish folder
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: de4dotEx-${{ env.DOTNET_RUNTIME }}-linux-x64
           path: publish-${{ env.DOTNET_RUNTIME }}
@@ -191,7 +191,7 @@ jobs:
 
           dpkg-deb --build deb-root de4dotEx-${{ steps.get_version.outputs.VERSION }}.deb
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: startsWith(github.ref, 'refs/tags/')
         with:
           name: de4dotEx-${{ steps.get_version.outputs.VERSION }}-${{ env.DOTNET_RUNTIME }}-x64-deb
@@ -208,13 +208,13 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -231,7 +231,7 @@ jobs:
           echo "image=ghcr.io/$IMAGE" >> "$GITHUB_OUTPUT"
 
       - name: Build and publish Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
