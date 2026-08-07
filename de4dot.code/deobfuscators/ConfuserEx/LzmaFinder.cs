@@ -120,6 +120,8 @@ namespace de4dot.code.deobfuscators.ConfuserEx
 		            if (!instructions[i++].IsLdloc())
 			            return false;
 		            i += 9;
+		            if (instructions[i].IsBr())
+			            i = instructions.IndexOf((Instruction)instructions[i].Operand);
 	            }
 	            else
 		            return false;
