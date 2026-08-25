@@ -156,7 +156,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				try {
 					decrypted = encryptedResource.Decrypt();
 				}
-				catch {
+				catch (Exception ex) {
+					Logger.e("Resource decryption failed:\n{0}", ex);
 					return null;
 				}
 

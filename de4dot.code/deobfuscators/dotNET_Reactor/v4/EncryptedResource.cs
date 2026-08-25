@@ -94,16 +94,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (method == null || !method.IsStatic || method.Body == null)
 				return DnrDecrypterType.Unknown;
 
-			if (additionalTypes == null)
-				additionalTypes = new string[0];
+			additionalTypes ??= Array.Empty<string>();
 			var localTypes = new LocalTypes(method);
 			if (DecrypterV1.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
 				return DnrDecrypterType.V1;
-			else if (DecrypterV3.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
+			if (DecrypterV3.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
 				return DnrDecrypterType.V3;
-			else if (DecrypterV4.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
+			if (DecrypterV4.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
 				return DnrDecrypterType.V4;
-			else if (DecrypterV2.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
+			if (DecrypterV2.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
 				return DnrDecrypterType.V2;
 
 			return DnrDecrypterType.Unknown;
@@ -113,13 +112,22 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (resourceDecrypterMethod == null)
 				return;
 
-			simpleDeobfuscator.Deobfuscate(resourceDecrypterMethod);
+			// Deobfuscate small methods to trigger inlining of Array::Reverse().
+			foreach (var method in resourceDecrypterMethod.DeclaringType.Methods) {
+				if (method.IsStatic && method.HasBody
+				                    && method.Body.Instructions.Count is > 10 and < 40
+				                    && (method.Body.Instructions[0].OpCode == OpCodes.Br_S || method.Body.Instructions[1].OpCode == OpCodes.Br_S))
+					simpleDeobfuscator.Deobfuscate(method);
+			}
+
+			simpleDeobfuscator.Deobfuscate(resourceDecrypterMethod, SimpleDeobfuscatorFlags.Force);
 
 			encryptedDataResource = FindMethodsDecrypterResource(resourceDecrypterMethod);
 			if (encryptedDataResource == null)
 				return;
 
-			var decrypterType = GetDecrypterType(resourceDecrypterMethod, new string[0]);
+			var decrypterType = GetDecrypterType(resourceDecrypterMethod, Array.Empty<string>());
+			Logger.v("DNR decrypterType: {0}, method: {1}", decrypterType, resourceDecrypterMethod);
 
 			if (decrypterType == DnrDecrypterType.V3) {
 				decrypter = new DecrypterV3(resourceDecrypterMethod);
@@ -143,6 +151,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 							iv[i * 2 + 1] = publicKeyToken.Data[i];
 					}
 				}
+				Logger.v("Key: {0}, IV: {1}", Convert.ToHexString(key), Convert.ToHexString(iv));
 
 				switch (decrypterType) {
 				case DnrDecrypterType.V1: decrypter = new DecrypterV1(iv, key); break;
