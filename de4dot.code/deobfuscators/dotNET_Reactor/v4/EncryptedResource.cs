@@ -151,7 +151,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 							iv[i * 2 + 1] = publicKeyToken.Data[i];
 					}
 				}
-				Logger.v("Key: {0}, IV: {1}", Convert.ToHexString(key), Convert.ToHexString(iv));
+				Logger.v("Key: {0}, IV: {1}", BitConverter.ToString(key).Replace("-", ""), BitConverter.ToString(iv).Replace("-", ""));
 
 				switch (decrypterType) {
 				case DnrDecrypterType.V1: decrypter = new DecrypterV1(iv, key); break;
