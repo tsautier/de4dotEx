@@ -39,12 +39,12 @@ namespace de4dot.code {
 		}
 
 		void PrintTokens(ModuleWriterBase writer) {
-			if (Logger.Instance.IgnoresEvent(LoggerEvent.Verbose))
+			if (Logger.Instance.IgnoresEvent(LoggerEvent.VeryVerbose))
 				return;
 
 			var md = writer.Metadata;
 
-			Logger.v("Old -> new tokens: Assembly: {0} (module: {1})", module.Assembly, module.Location);
+			Logger.vv("Old -> new tokens: Assembly: {0} (module: {1})", module.Assembly, module.Location);
 			Logger.Instance.Indent();
 			foreach (var type in module.GetTypes()) {
 				uint newRid;
@@ -52,7 +52,7 @@ namespace de4dot.code {
 				newRid = md.GetRid(type);
 				if (newRid == 0)
 					continue;
-				Logger.v("{0:X8} -> {1:X8} Type: {2}",
+				Logger.vv("{0:X8} -> {1:X8} Type: {2}",
 						type.MDToken.ToUInt32(),
 						new MDToken(Table.TypeDef, newRid).ToUInt32(),
 						Utils.RemoveNewlines(type));
@@ -63,7 +63,7 @@ namespace de4dot.code {
 					newRid = md.GetRid(method);
 					if (newRid == 0)
 						continue;
-					Logger.v("{0:X8} -> {1:X8} Method: {2}",
+					Logger.vv("{0:X8} -> {1:X8} Method: {2}",
 							method.MDToken.ToUInt32(),
 							new MDToken(Table.Method, newRid).ToUInt32(),
 							Utils.RemoveNewlines(method));
@@ -73,7 +73,7 @@ namespace de4dot.code {
 					newRid = md.GetRid(field);
 					if (newRid == 0)
 						continue;
-					Logger.v("{0:X8} -> {1:X8} Field: {2}",
+					Logger.vv("{0:X8} -> {1:X8} Field: {2}",
 							field.MDToken.ToUInt32(),
 							new MDToken(Table.Field, newRid).ToUInt32(),
 							Utils.RemoveNewlines(field));
@@ -83,7 +83,7 @@ namespace de4dot.code {
 					newRid = md.GetRid(prop);
 					if (newRid == 0)
 						continue;
-					Logger.v("{0:X8} -> {1:X8} Property: {2}",
+					Logger.vv("{0:X8} -> {1:X8} Property: {2}",
 							prop.MDToken.ToUInt32(),
 							new MDToken(Table.Property, newRid).ToUInt32(),
 							Utils.RemoveNewlines(prop));
@@ -93,7 +93,7 @@ namespace de4dot.code {
 					newRid = md.GetRid(evt);
 					if (newRid == 0)
 						continue;
-					Logger.v("{0:X8} -> {1:X8} Event: {2}",
+					Logger.vv("{0:X8} -> {1:X8} Event: {2}",
 							evt.MDToken.ToUInt32(),
 							new MDToken(Table.Event, newRid).ToUInt32(),
 							Utils.RemoveNewlines(evt));
