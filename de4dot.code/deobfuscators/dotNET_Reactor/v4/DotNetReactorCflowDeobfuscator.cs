@@ -47,8 +47,7 @@ class DotNetReactorCflowDeobfuscator : IBlocksDeobfuscator {
 			if (pop.OpCode.Code != Code.Pop)
 				continue;
 
-			var method = call.Operand as MethodDef;
-			if (method == null)
+			if (call.Operand is not MethodDef { HasBody: true } method)
 				continue;
 			var methodInstrs = method.Body.Instructions;
 			if (methodInstrs.Count < 2)
@@ -120,7 +119,7 @@ class DotNetReactorCflowDeobfuscator2 : IBlocksDeobfuscator {
 				    || !instrs[callIndex - 2].IsLdcI4())
 				continue;
 
-			if (call.Operand is not MethodDef method)
+			if (call.Operand is not MethodDef { HasBody: true } method)
 				continue;
 
 			var methodInstrs = method.Body.Instructions;
