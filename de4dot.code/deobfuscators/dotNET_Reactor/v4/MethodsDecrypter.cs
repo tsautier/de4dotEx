@@ -1,20 +1,20 @@
 /*
-    Copyright (C) 2011-2015 de4dot@gmail.com
+	Copyright (C) 2011-2015 de4dot@gmail.com
 
-    This file is part of de4dot.
+	This file is part of de4dot.
 
-    de4dot is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	de4dot is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    de4dot is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	de4dot is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using System;
@@ -128,7 +128,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			var methodsDataReader = ByteArrayDataReaderFactory.CreateReader(methodsData);
 
 			int tmp;
-			if (FindBinaryReaderMethod(simpleDeobfuscator, out var popCallsCount) && popCallsCount > 3)
+			bool hasReadMethod = FindBinaryReaderMethod(simpleDeobfuscator, out var popCallsCount);
+			if (hasReadMethod && popCallsCount > 3)
 				for (var i = 0; i < popCallsCount; i++)
 					methodsDataReader.ReadInt32();
 			else {
@@ -137,6 +138,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					methodsDataReader.ReadInt32();
 				else
 					methodsDataReader.Position -= 4;
+			}
+
+			if (hasReadMethod && popCallsCount == 1) {  // 7.5.0.0
+				methodsDataReader.Position += 8;
 			}
 
 			int patchCount = methodsDataReader.ReadInt32();
@@ -263,51 +268,58 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		// Adapted from SychicBoy's NETReactorSlayer
+		// Finds:
+		// internal int obfuscatedname() => this.lAMWbJ7URR.ReadInt32();
+		// ...and returns how often it's called with an ignored result in the initial parsing portion.
 		private bool FindBinaryReaderMethod(ISimpleDeobfuscator simpleDeobfuscator, out int popCallsCount) {
-            popCallsCount = 0;
-            var decrypterMethod = encryptedResource.Method;
-            var calls = decrypterMethod.Body.Instructions
-                .Where(x => x.OpCode == OpCodes.Callvirt && x.Operand is MethodDef md && md.MethodSig.RetType.FullName == "System.Int32")
-                .Select(x => x.Operand)
-                .Cast<MethodDef>();
-            foreach (var method in calls)
-                try {
-                    simpleDeobfuscator.Deobfuscate(method);
-                    if (method.Body.Instructions.Count != 4)
-                        continue;
+			popCallsCount = 0;
+			var decrypterMethodInsns = encryptedResource.Method.Body.Instructions;
 
-                    if (!method.Body.Instructions[0].IsLdarg()
-                        || method.Body.Instructions[1].OpCode != OpCodes.Ldfld
-                        || method.Body.Instructions[2].OpCode.Code is not (Code.Callvirt or Code.Call)
-                        || method.Body.Instructions[3].OpCode != OpCodes.Ret)
-                        continue;
+			var calls = decrypterMethodInsns
+				.Where(x => x.OpCode == OpCodes.Callvirt && x.Operand is MethodDef md && md.MethodSig.RetType.FullName == "System.Int32")
+				.Select(x => x.Operand)
+				.Cast<MethodDef>();
+			foreach (var method in calls)
+				try {
+					simpleDeobfuscator.Deobfuscate(method);
+					if (method.Body.Instructions.Count != 4)
+						continue;
 
-                    if (!method.Body.Instructions[2].Operand.ToString()!.Contains("System.Int32"))
-                        continue;
+					if (!method.Body.Instructions[0].IsLdarg()
+						|| method.Body.Instructions[1].OpCode != OpCodes.Ldfld
+						|| method.Body.Instructions[2].OpCode.Code is not (Code.Callvirt or Code.Call)
+						|| method.Body.Instructions[3].OpCode != OpCodes.Ret)
+						continue;
 
-                    for (var i = 0; i < decrypterMethod.Body.Instructions.Count; i++)
-                        try {
-                            if (!decrypterMethod.Body.Instructions[i].IsLdloc()
-                                || decrypterMethod.Body.Instructions[i + 1].OpCode != OpCodes.Callvirt
-                                || decrypterMethod.Body.Instructions[i + 1].Operand is not MethodDef calledMethod
-                                || decrypterMethod.Body.Instructions[i + 2].OpCode != OpCodes.Pop)
-                                continue;
+					if (!method.Body.Instructions[2].Operand.ToString()!.Contains("System.Int32"))
+						continue;
+					Logger.v("Method encryption ReadInt32() method: {0}", Utils.RemoveNewlines(method));
 
-                            if (MethodEqualityComparer.CompareDeclaringTypes.Equals(calledMethod, method))
-                                popCallsCount++;
-                        }
-                        catch {
-	                        // ignored
-                        }
+					for (var i = 0; i < decrypterMethodInsns.Count - 3; i++)
+						try {
+							if (popCallsCount > 0 && decrypterMethodInsns[i].IsConditionalBranch())
+								break; // we're mostly interested in the first bunch of reads
+							if (!decrypterMethodInsns[i].IsLdloc()
+								|| decrypterMethodInsns[i + 1].OpCode != OpCodes.Callvirt
+								|| decrypterMethodInsns[i + 1].Operand is not MethodDef calledMethod
+								|| decrypterMethodInsns[i + 2].OpCode != OpCodes.Pop)
+								continue;
 
-                    return true;
-                }
-                catch {
-	                // ignored
-                }
+							if (MethodEqualityComparer.CompareDeclaringTypes.Equals(calledMethod, method))
+								popCallsCount++;
+						}
+						catch {
+							// ignored
+						}
 
-            return false;
-        }
+					return true;
+				}
+				catch {
+					// ignored
+				}
+
+			return false;
+		}
 
 		public static bool IsNewer45Decryption(MethodDef method) {
 			if (method == null || method.Body == null)
