@@ -97,6 +97,40 @@ internal record Dup : IOpcodePattern {
 	public override OpCode Opcode => OpCodes.Dup;
 }
 
+internal record Endfilter : IOpcodePattern {
+	public override IList<OpCode> Pattern => new List<OpCode>
+	{
+		OpCodes.Ldarg_0,
+		OpCodes.Ldarg_0,
+		OpCodes.Ldfld,    // Stack
+		OpCodes.Callvirt, // Pop()
+		OpCodes.Ldtoken,  // System.Boolean
+		OpCodes.Call,     // GetTypeFromHandle
+		OpCodes.Callvirt, // UnboxObj
+		OpCodes.Unbox_Any,// System.Boolean
+		OpCodes.Stfld,    // BoolForEndFilter
+
+		OpCodes.Ldarg_0,
+		OpCodes.Ldc_I4_1,
+		OpCodes.Stfld, // VMExecution::EndFilterFlag
+		OpCodes.Ret
+	};
+
+	public override OpCode Opcode => OpCodes.Endfilter;
+}
+
+internal record Endfinally : IOpcodePattern {
+	public override IList<OpCode> Pattern => new List<OpCode>
+	{
+		OpCodes.Ldarg_0,
+		OpCodes.Ldc_I4_1,
+		OpCodes.Stfld, // VMExecution::EndFinallyFlag
+		OpCodes.Ret
+	};
+
+	public override OpCode Opcode => OpCodes.Endfinally;
+}
+
 internal record Ldarg : IOpcodePattern {
 	public override IList<OpCode> Pattern => new List<OpCode>
 	{

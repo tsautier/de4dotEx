@@ -118,6 +118,16 @@ public class Devirtualizer {
 					}
 				}
 
+				if (!Logger.Instance.IgnoresEvent(LoggerEvent.VeryVerbose)) {
+					for (int index = 0; index < vmMethod.Instructions.Count; index++) {
+						Logger.vv("[{0}] {1}", index, vmMethod.Instructions[index]);
+					}
+					foreach (var eh in vmMethod.ExceptionHandlers) {
+						Logger.vv("EH type {0}: try {1} - {2}, handler {3} - {4}", eh.HandlerType, eh.TryStart,
+							eh.TryEnd, eh.HandlerStart, eh.HandlerEnd);
+					}
+				}
+
 				if (!allKnown)
 					continue;
 
