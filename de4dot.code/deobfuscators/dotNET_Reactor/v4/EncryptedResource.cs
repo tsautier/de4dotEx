@@ -681,9 +681,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 						*/
 						var rhs = instrEmulator.Pop();
 						var lhs = instrEmulator.Pop();
-						if (rhs is Int32Value rhsInt && lhs is Int32Value lhsInt && rhsInt.IsZero() && lhsInt.IsZero()) {
+						if ((rhs is Int32Value rhsInt && lhs is Int32Value lhsInt && rhsInt.IsZero() && lhsInt.IsZero()) ||
+						    (rhs is Int64Value rhsLong && lhs is Int64Value lhsLong && rhsLong.IsZero() && lhsLong.IsZero())) {
 							var local = (Local)instructions[instructions.IndexOf(instr) - 2].Operand;
-							instrEmulator.SetLocal(local, new Int32Value(-1));
+							instrEmulator.SetLocal(local, lhs is Int32Value ? new Int32Value(-1) : new Int64Value(-1));
 						}
 					}
 					else {
