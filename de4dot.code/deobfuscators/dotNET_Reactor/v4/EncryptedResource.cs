@@ -278,7 +278,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					int newStartIndex = -1;
 					for (int j = newEndIndex; j >= 0; j--) {
 						// Search upwards for array access or br.
-						if (instrs[j].OpCode.Code != Code.Ldelem_U1 && (!instrs[j].IsBr() || instrs[j - 1].OpCode.Code == Code.Bne_Un_S))
+						if (instrs[j].OpCode.Code != Code.Ldelem_U1
+								&& (!instrs[j].IsBr() || instrs[j - 1].OpCode.Code == Code.Bne_Un_S)
+								&& instrs[j].OpCode.Code != Code.Blt_S)
 							continue;
 
 						// Go down to next local load, where the actual decryption should begin.
