@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -33,6 +34,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		V2,
 		V3,
 		V4,
+		V5,
 	}
 
 	class EncryptedResource {
@@ -102,6 +104,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return DnrDecrypterType.V3;
 			if (DecrypterV4.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
 				return DnrDecrypterType.V4;
+			if (DecrypterV5.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
+				return DnrDecrypterType.V5;
 			if (DecrypterV2.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
 				return DnrDecrypterType.V2;
 
@@ -127,13 +131,16 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return;
 
 			var decrypterType = GetDecrypterType(resourceDecrypterMethod, Array.Empty<string>());
-			Logger.v("DNR decrypterType: {0}, method: {1}", decrypterType, resourceDecrypterMethod);
+			Logger.n("DNR decrypterType: {0}, method: {1}", decrypterType, Utils.RemoveNewlines(resourceDecrypterMethod));
 
 			if (decrypterType == DnrDecrypterType.V3) {
 				decrypter = new DecrypterV3(resourceDecrypterMethod);
 			}
 			else if (decrypterType == DnrDecrypterType.V4) {
 				decrypter = new DecrypterV4(module, simpleDeobfuscator, resourceDecrypterMethod);
+			}
+			else if (decrypterType == DnrDecrypterType.V5) {
+				decrypter = new DecrypterV5(module, simpleDeobfuscator, resourceDecrypterMethod);
 			}
 			else {
 				var key = ArrayFinder.GetInitializedByteArray(resourceDecrypterMethod, 32);
@@ -304,6 +311,36 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					return null;
 
 				return instr.GetLocal(locals);
+			}
+
+			public virtual byte[] Encrypt(byte[] data) {
+				//TODO: Support re-encryption
+				Logger.e("Re-encryption is not supported. Assembly will probably crash at runtime.");
+				return (byte[])data.Clone();
+			}
+
+			internal static uint ReadUInt32(byte[] ary, int index) {
+				int sizeLeft = ary.Length - index;
+				if (sizeLeft >= 4)
+					return BitConverter.ToUInt32(ary, index);
+				switch (sizeLeft) {
+				case 1: return ary[index];
+				case 2: return (uint)(ary[index] | (ary[index + 1] << 8));
+				case 3: return (uint)(ary[index] | (ary[index + 1] << 8) | (ary[index + 2] << 16));
+				default: throw new ApplicationException("Can't read data");
+				}
+			}
+
+			internal static void WriteUInt32(byte[] ary, int index, uint value) {
+				int sizeLeft = ary.Length - index;
+				if (sizeLeft >= 1)
+					ary[index] = (byte)value;
+				if (sizeLeft >= 2)
+					ary[index + 1] = (byte)(value >> 8);
+				if (sizeLeft >= 3)
+					ary[index + 2] = (byte)(value >> 16);
+				if (sizeLeft >= 4)
+					ary[index + 3] = (byte)(value >> 24);
 			}
 		}
 
@@ -498,36 +535,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					throw new ApplicationException("Couldn't calculate magic value");
 				return (uint)tos.Value;
 			}
-
-			static uint ReadUInt32(byte[] ary, int index) {
-				int sizeLeft = ary.Length - index;
-				if (sizeLeft >= 4)
-					return BitConverter.ToUInt32(ary, index);
-				switch (sizeLeft) {
-				case 1: return ary[index];
-				case 2: return (uint)(ary[index] | (ary[index + 1] << 8));
-				case 3: return (uint)(ary[index] | (ary[index + 1] << 8) | (ary[index + 2] << 16));
-				default: throw new ApplicationException("Can't read data");
-				}
-			}
-
-			static void WriteUInt32(byte[] ary, int index, uint value) {
-				int sizeLeft = ary.Length - index;
-				if (sizeLeft >= 1)
-					ary[index] = (byte)value;
-				if (sizeLeft >= 2)
-					ary[index + 1] = (byte)(value >> 8);
-				if (sizeLeft >= 3)
-					ary[index + 2] = (byte)(value >> 16);
-				if (sizeLeft >= 4)
-					ary[index + 3] = (byte)(value >> 24);
-			}
-
-			public byte[] Encrypt(byte[] data) {
-				//TODO: Support re-encryption
-				Logger.e("Re-encryption is not supported. Assembly will probably crash at runtime.");
-				return (byte[])data.Clone();
-			}
 		}
 
 		class DecrypterV3 : EmulatingDecrypterBase, IDecrypter {
@@ -687,38 +694,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					throw new ApplicationException("Couldn't calculate magic value");
 				return (uint)tos.Value;
 			}
-
-			static uint ReadUInt32(byte[] ary, int index) {
-				int sizeLeft = ary.Length - index;
-				if (sizeLeft >= 4)
-					return BitConverter.ToUInt32(ary, index);
-				switch (sizeLeft) {
-				case 1: return ary[index];
-				case 2: return (uint)(ary[index] | (ary[index + 1] << 8));
-				case 3: return (uint)(ary[index] | (ary[index + 1] << 8) | (ary[index + 2] << 16));
-				default: throw new ApplicationException("Can't read data");
-				}
-			}
-
-			static void WriteUInt32(byte[] ary, int index, uint value) {
-				int sizeLeft = ary.Length - index;
-				if (sizeLeft >= 1)
-					ary[index] = (byte)value;
-				if (sizeLeft >= 2)
-					ary[index + 1] = (byte)(value >> 8);
-				if (sizeLeft >= 3)
-					ary[index + 2] = (byte)(value >> 16);
-				if (sizeLeft >= 4)
-					ary[index + 3] = (byte)(value >> 24);
-			}
-
-			public byte[] Encrypt(byte[] data) {
-				//TODO: Support re-encryption
-				Logger.e("Re-encryption is not supported. Assembly will probably crash at runtime.");
-				return (byte[])data.Clone();
-			}
 		}
 
+		/// This is used for methods which don't do decryption themselves, but retrieve a resource stream and
+		/// paes it to the actual decrypter method. Mostly used by string decryption, where origMethod is "System.String (System.Int32)".
 		class DecrypterV4 : EmulatingDecrypterBase, IDecrypter {
 			readonly byte[] key, iv;
 			MethodDef decryptMethod;
@@ -934,38 +913,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 				var tos = instrEmulator.Pop() as Int32Value;
 				if (tos == null || !tos.AllBitsValid())
-					throw new ApplicationException("Couldn't calculate magic value");
+					throw new ApplicationException("Couldn't calculate magic value (V4)");
 				return (uint)tos.Value;
-			}
-
-			static uint ReadUInt32(byte[] ary, int index) {
-				int sizeLeft = ary.Length - index;
-				if (sizeLeft >= 4)
-					return BitConverter.ToUInt32(ary, index);
-				switch (sizeLeft) {
-				case 1: return ary[index];
-				case 2: return (uint)(ary[index] | (ary[index + 1] << 8));
-				case 3: return (uint)(ary[index] | (ary[index + 1] << 8) | (ary[index + 2] << 16));
-				default: throw new ApplicationException("Can't read data");
-				}
-			}
-
-			static void WriteUInt32(byte[] ary, int index, uint value) {
-				int sizeLeft = ary.Length - index;
-				if (sizeLeft >= 1)
-					ary[index] = (byte)value;
-				if (sizeLeft >= 2)
-					ary[index + 1] = (byte)(value >> 8);
-				if (sizeLeft >= 3)
-					ary[index + 2] = (byte)(value >> 16);
-				if (sizeLeft >= 4)
-					ary[index + 3] = (byte)(value >> 24);
-			}
-
-			public byte[] Encrypt(byte[] data) {
-				//TODO: Support re-encryption
-				Logger.e("Re-encryption is not supported. Assembly will probably crash at runtime.");
-				return (byte[])data.Clone();
 			}
 
 			bool UsesPublicKeyToken() {
@@ -989,6 +938,141 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			bool NeedReverse() => DotNetUtils.CallsMethodContains(decryptMethod, "System.Array::Reverse");
+		}
+
+		/// Similar to DecrypterV4, but in CoreCLR samples everything is slightly different.
+		class DecrypterV5 : EmulatingDecrypterBase, IDecrypter {
+			readonly byte[] _key;
+			MethodDef _decryptMethod;
+			MethodDef _emuMethod;
+
+			public DnrDecrypterType DecrypterType => DnrDecrypterType.V5;
+
+			public DecrypterV5(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, MethodDef origMethod) {
+				if (!FindDecrypterMethod(origMethod))
+					throw new ApplicationException("Could not find decrypter method");
+				simpleDeobfuscator.Deobfuscate(_decryptMethod);
+
+				if (!FindEmulateMethod(_decryptMethod))
+					throw new ApplicationException("Could not find emulate method");
+				simpleDeobfuscator.Deobfuscate(_emuMethod);
+
+				_key = ArrayFinder.GetInitializedByteArray(_decryptMethod, 32);
+				if (_key == null)
+					throw new ApplicationException("Could not find resource decrypter key");
+				// iv is initialized but unused by algorithm
+
+				locals = new List<Local>(_emuMethod.Body.Variables);
+				if (!Initialize())
+					throw new ApplicationException("Could not initialize decrypter");
+			}
+
+			public static bool CouldBeResourceDecrypter(MethodDef method, LocalTypes localTypes, IList<string> additionalTypes) {
+				var requiredTypes = new List<string> {
+					"System.Int32",
+					"System.Byte[]",
+				};
+				requiredTypes.AddRange(additionalTypes);
+				if (!localTypes.All(requiredTypes))
+					return false;
+
+				var instrs = method.Body.Instructions;
+
+				return instrs
+					.Where(instr => instr.OpCode == OpCodes.Call)
+					.Any(instr => instr.Operand is IMethod
+						{ FullName: "System.Reflection.TypeInfo System.Reflection.IntrospectionExtensions::GetTypeInfo(System.Type)" });
+			}
+
+			// G0vd4aKE04kuyjm5l0V.yORKBYkd2T(IntrospectionExtensions.GetTypeInfo(typeof(G0vd4aKE04kuyjm5l0V)).Assembly.GetManifestResourceStream("orTiEoc4ipdVGb8Nhl.Vk5QTEweACssDoIlI6"));
+			bool FindDecrypterMethod(MethodDef caller) {
+				var instrs = caller.Body.Instructions;
+				for (var i = 0; i < instrs.Count; i++) {
+					if (instrs[i].OpCode != OpCodes.Call)
+						continue;
+					if (instrs[i + 1].OpCode != OpCodes.Callvirt)
+						continue;
+					if (instrs[i + 2].OpCode != OpCodes.Ldstr)
+						continue;
+					if (instrs[i + 3].OpCode != OpCodes.Callvirt)
+						continue;
+					var call = instrs[i + 4];
+					if (call.OpCode != OpCodes.Call)
+						continue;
+
+					_decryptMethod = call.Operand as MethodDef;
+					return true;
+				}
+
+				return false;
+			}
+
+			// G0vd4aKE04kuyjm5l0V.kj6au9ypKv = new G0vd4aKE04kuyjm5l0V(array, obj5).VPeKFdDrjA(obj2);
+			//                                                                       ^-- dataProcessingMethod
+			// in there: num4 += this.hSIK5IkfF8(num4);
+			//                        ^-- emuMethod
+			bool FindEmulateMethod(MethodDef decrypt) {
+				var instrs = decrypt.Body.Instructions;
+				MethodDef dataProcessingMethod = null;
+				for (var i = 0; i < instrs.Count; i++) {
+					if (!instrs[i].IsLdloc())
+						continue;
+					if (instrs[i + 1].OpCode != OpCodes.Newobj)
+						continue;
+					if (!instrs[i + 2].IsLdloc())
+						continue;
+					var call = instrs[i + 3];
+					if (call.OpCode != OpCodes.Call)
+						continue;
+
+					dataProcessingMethod = call.Operand as MethodDef;
+					break;
+				}
+				if (dataProcessingMethod == null)
+					return false;
+
+				_emuMethod = DotNetUtils.GetCalledMethods(dataProcessingMethod.Module, dataProcessingMethod)
+					.FirstOrDefault(m => !m.IsStatic && m.Parameters.Count == 2 && m.ReturnType.FullName == "System.UInt32");
+				return _emuMethod != null;
+			}
+
+			bool Initialize() {
+				var origInstrs = _emuMethod.Body.Instructions;
+
+				int count = origInstrs.Count - 1; // skip ret
+				instructions = new List<Instruction>(count);
+				for (int i = 0; i < count; i++)
+					instructions.Add(origInstrs[i].Clone());
+
+				return true;
+			}
+
+			public byte[] Decrypt(EmbeddedResource resource) {
+				var encrypted = resource.CreateReader().ToArray();
+				var decrypted = new byte[encrypted.Length];
+
+				uint sum = 0;
+				for (int i = 0; i < encrypted.Length; i += 4) {
+					sum += ReadUInt32(_key, i % _key.Length);
+					sum += CalculateMagic(sum);
+					WriteUInt32(decrypted, i, sum ^ ReadUInt32(encrypted, i));
+				}
+
+				return decrypted;
+			}
+
+			uint CalculateMagic(uint input) {
+				instrEmulator.Initialize(_emuMethod, _emuMethod.Parameters, locals, _emuMethod.Body.InitLocals, true);
+				instrEmulator.SetArg(new Parameter(1), new Int32Value((int)input));
+
+				foreach (var instr in instructions)
+					instrEmulator.Emulate(instr);
+
+				var tos = instrEmulator.Pop() as Int32Value;
+				if (tos == null || !tos.AllBitsValid())
+					throw new ApplicationException("Couldn't calculate magic value (V5)");
+				return (uint)tos.Value;
+			}
 		}
 
 		public byte[] Decrypt() {
