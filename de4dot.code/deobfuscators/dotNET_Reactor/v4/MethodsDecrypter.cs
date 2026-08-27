@@ -140,7 +140,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					methodsDataReader.Position -= 4;
 			}
 
-			if (hasReadMethod && popCallsCount == 1) {  // 7.5.0.0
+			if (hasReadMethod && popCallsCount == 1) {  // 7.5.0.0 / CoreCLR
 				methodsDataReader.Position += 8;
 			}
 
@@ -149,6 +149,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				patchCount = methodsDataReader.ReadInt32();
 
 			int mode = methodsDataReader.ReadInt32();
+			if (hasReadMethod && popCallsCount > 0 && mode == 0)  // CoreCLR (FindDnrCompileMethod doesn't work for it)
+				hooksJitter = true;
+
 			tmp = methodsDataReader.ReadInt32();
 			methodsDataReader.Position -= 4;
 			if ((tmp & 0xFF000000) == 0x06000000) {
