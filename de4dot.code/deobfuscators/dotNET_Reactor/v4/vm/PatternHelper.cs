@@ -53,16 +53,23 @@ internal static class PatternHelper {
 		foreach (var t in virtualMethod.Module.GetTypes()) {
 			// (...sometimes there is some nop/br trash in front of here)
 			// ldarg.0
-			// callvirt this.AsByte()
+			// callvirt this.AsByte()  // obfuscated assembly sometimes has a call to yet another wrapper here instead
 			// ret
 			var firstOverride = t.Methods.FirstOrDefault(m => m.IsVirtual && m.HasBody
 			                                                              && m.Name == virtualMethod.Name
 			                                                              && m.Body.Instructions.Count >= 3
-			                                                              && m.Body.Instructions[m.Body.Instructions.Count - 2].OpCode == OpCodes.Callvirt); // net48 compat
+			                                                              && m.Body.Instructions[m.Body.Instructions.Count - 2].OpCode.Code // net48 compat
+				                                                              is Code.Call or Code.Callvirt);
 			if (firstOverride == null)
 				continue;
 
-			var calledInOverride = ((MethodDef)firstOverride.Body.Instructions[firstOverride.Body.Instructions.Count - 2].Operand).Name; // net48 compat
+			var foInstrs = firstOverride.Body.Instructions;
+			if (foInstrs[foInstrs.Count - 2].OpCode.Code == Code.Call) { // extra wrapper case, rare
+				firstOverride = (MethodDef)foInstrs[foInstrs.Count - 2].Operand;
+				foInstrs = firstOverride.Body.Instructions;
+			}
+
+			var calledInOverride = ((MethodDef)foInstrs[foInstrs.Count - 2].Operand).Name; // net48 compat
 			foreach (var t2 in virtualMethod.Module.GetTypes()) {
 				foreach (var callee in t2.Methods.Where(m => m.IsVirtual && m.HasBody && m.Name == calledInOverride)) {
 					if (PatternMatcher.Match(pattern, callee.Body.Instructions))
