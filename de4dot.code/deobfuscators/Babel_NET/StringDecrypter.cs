@@ -81,6 +81,30 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
+		// Like DecrypterInfoV2, but with key length 16 and masking for the key byte lookup.
+		class DecrypterInfoV2_16 : IDecrypterInfo {
+			byte[] key;
+
+			public MethodDef Decrypter { get; init; }
+			public bool NeedsResource => true;
+
+			public void Initialize(ModuleDefMD module, EmbeddedResource resource) {
+				key = resource.CreateReader().ToArray();
+				if (key.Length != 0x10)
+					throw new ApplicationException($"Unknown key length: {key.Length}");
+			}
+
+			public string Decrypt(object[] args) => Decrypt((string)args[0], (int)args[1]);
+
+			string Decrypt(string s, int k) {
+				var sb = new StringBuilder(s.Length);
+				byte b = key[k & 15];
+				foreach (var c in s)
+					sb.Append((char)(c ^ (b | k)));
+				return sb.ToString();
+			}
+		}
+
 		class DecrypterInfoV3 : IDecrypterInfo {
 			Dictionary<int, string> offsetToString = new Dictionary<int, string>();
 			ResourceDecrypter resourceDecrypter;
@@ -219,7 +243,20 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (nested.FindMethod(".ctor") == null)
 				return null;
 
-			if (nested.Fields.Count == 1 || nested.Fields.Count == 3) {
+			if (nested.Fields.Count is 3 or 4) {
+				// Check for string,int variant with 3 nested fields and key length 16.
+				// When .NET Reactor was applied on top, field count is +1 due to an extraneous object field.
+				if (CheckFields(nested, "System.Byte[]", nested)) {
+					var nestedDecrypter16 = DotNetUtils.GetMethod(nested, "System.String", "(System.String,System.Int32)");
+					if (nestedDecrypter16 is { IsStatic: false }) {
+						var decrypter16 = DotNetUtils.GetMethod(type, "System.String", "(System.String,System.Int32)");
+						if (decrypter16 is { IsStatic: true })
+							return new DecrypterInfoV2_16 { Decrypter = decrypter16 };
+					}
+				}
+			}
+
+			if (nested.Fields.Count is 1 or 3) {
 				// 4.0+
 
 				if (!HasFieldType(nested.Fields, nested))
@@ -593,14 +630,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return 0;
 		}
 
-		bool CheckFields(TypeDef type, string fieldType1, TypeDef fieldType2) {
-			if (type.Fields.Count != 2)
+		static bool CheckFields(TypeDef type, string fieldType1, TypeDef fieldType2) {
+			var c = type.Fields.Count;
+			if (c is < 2 or > 4)
 				return false;
-			if (type.Fields[0].FieldSig.GetFieldType().GetFullName() != fieldType1 &&
-				type.Fields[1].FieldSig.GetFieldType().GetFullName() != fieldType1)
+			if (type.Fields.All(f => f.FieldSig.GetFieldType().GetFullName() != fieldType1))
 				return false;
-			if (!new SigComparer().Equals(type.Fields[0].FieldSig.GetFieldType(), fieldType2) &&
-				!new SigComparer().Equals(type.Fields[1].FieldSig.GetFieldType(), fieldType2))
+			if (type.Fields.All(f => !new SigComparer().Equals(f.FieldSig.GetFieldType(), fieldType2)))
 				return false;
 			return true;
 		}
