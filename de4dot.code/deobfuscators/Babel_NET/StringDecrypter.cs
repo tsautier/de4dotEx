@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		class DecrypterInfoV2_16 : IDecrypterInfo {
 			byte[] key;
 
-			public MethodDef Decrypter { get; init; }
+			public MethodDef Decrypter { get; set; }
 			public bool NeedsResource => true;
 
 			public void Initialize(ModuleDefMD module, EmbeddedResource resource) {
